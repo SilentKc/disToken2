@@ -4,7 +4,10 @@
             <mu-button icon slot="left" v-show="back" @click="goBack">
                 <mu-icon value="chevron_left"></mu-icon>
             </mu-button>
-            <mu-button icon slot="left" v-show="!back">
+            <mu-button icon slot="left" v-show="list" @click="goList">
+                <mu-icon value="menu"></mu-icon>
+            </mu-button>
+            <mu-button icon slot="left" v-show="!back && !list">
                 <mu-icon value=""></mu-icon>
             </mu-button>
             <span @click="test">{{ title }}</span>
@@ -51,6 +54,7 @@
                 path: '1',
                 title: title,
                 back: false,
+                list: false,
                 add: false,
                 qr: false,
                 scan: false,
@@ -58,16 +62,39 @@
                 canOTC: canOTC
             }
         },
+        mounted() {
+            // let self = this
+            // 将要给原生调用的方法挂载到 window 上面
+            // window.test = self.test
+        },
         created() {
             let self = this
             if (self.pullAccounts()) {
                 console.log('拉取APP数据')
+                let storage = window.localStorage
+                if (storage.hasOwnProperty('disToken2Last')) {
+                    let lastTmp = storage['disToken2Last']
+                    self.$router.replace('/Account/' + lastTmp)
+                }
             } else {
-                let hasAccs = self.$cookies.isKey('disToken2Accounts')
+                let storage = window.localStorage
+                let hasAccs = storage.hasOwnProperty('disToken2Accounts')
+                let hasLast = storage.hasOwnProperty('disToken2Last')
+                let hasAccsOld = self.$cookies.isKey('disToken2Accounts')
                 if (hasAccs) {
+                    let oldTmp = storage['disToken2Accounts']
+                    let tmp = JSON.parse(oldTmp)
+                    for (let i in tmp) {
+                        self.accountList.push(tmp[i])
+                    }
+                    if (hasLast) {
+                        let lastTmp = storage['disToken2Last']
+                        self.$router.push('/Account/' + lastTmp)
+                    }
+                } else if (hasAccsOld) {
                     let oldTmp = self.$cookies.get('disToken2Accounts')
-                    self.$cookies.set('disToken2Accounts', JSON.stringify([]))
-                    self.$cookies.set('disToken2Accounts', oldTmp, '15d')
+                    self.$cookies.remove('disToken2Accounts')
+                    storage['disToken2Accounts'] = oldTmp
                     let tmp = JSON.parse(oldTmp)
                     for (let i in tmp) {
                         self.accountList.push(tmp[i])
@@ -101,13 +128,20 @@
                 let self = this
                 self.path = value
                 if (value == '1') {
-                    self.$router.replace('/AccountList')
+                    let storage = window.localStorage
+                    if (storage.hasOwnProperty('disToken2Last')) {
+                        let lastTmp = storage['disToken2Last']
+                        self.$router.replace('/Account/' + lastTmp)
+                    } else {
+                        self.$router.replace('/AccountList')
+                    }
                 }
                 if (value == '2') {
                     self.$router.replace('/GameList')
                 }
                 if (value == '3') {
                     location.href = 'http://c2c.naturetoken.io/'
+                    // self.$router.replace('/Web/0/3')
                 }
                 if (value == '9') {
                     self.$router.replace('/CreateAccount')
@@ -117,6 +151,7 @@
                 let self = this
                 // self.title = data.title
                 self.back = data.back
+                self.list = data.list == undefined ? false : data.list
                 self.add = data.add
                 self.qr = data.qr
                 self.scan = data.scan
@@ -124,6 +159,9 @@
             },
             goBack() {
                 this.$router.go(-1)
+            },
+            goList() {
+                this.$router.replace('/AccountList')
             },
             goAdd() {
                 let self = this
@@ -202,6 +240,24 @@
                 }).catch(e => {
                     console.log(e)
                     self.$alert('交易密码错误', '提示', {type: 'error'})
+                })
+            },
+            doExportNew(acc, callback) {
+                let self = this
+                self.$prompt('请输入交易密码', '导出私钥', {inputType: 'password'}).then(data => {
+                    if (data.result && data.value != undefined && data.value != '') {
+                        let bytes = CryptoJS.AES.decrypt(acc.key, data.value)
+                        let plaintext = bytes.toString(CryptoJS.enc.Utf8)
+                        // console.log(plaintext)
+                        if (plaintext != '') {
+                            callback({success: true, msg: '成功导出私钥', result: plaintext})
+                        } else {
+                            callback({success: false, msg: '交易密码错误', result: false})
+                        }
+                    }
+                }).catch(e => {
+                    console.log(e)
+                    callback({success: false, msg: '交易密码错误', result: false})
                 })
             },
             getAccount(id, acc, callback) {
@@ -421,7 +477,11 @@
                                         contract.transfer(from, to, quantity, memo).then(result => {
                                             // console.log(result)
                                             loading.close()
-                                            callback({success: true, msg: '转账成功', result: result})
+                                            if (result.processed != undefined && result.transaction_id != undefined) {
+                                                callback({success: true, msg: '转账成功', result: result})
+                                            } else {
+                                                callback({success: false, msg: '转账失败', result: result.error})
+                                            }
                                         }).catch(error => {
                                             // console.log(error)
                                             loading.close()
@@ -521,11 +581,18 @@
             scanQRCode() {
                 if (window.android_client != undefined) {
                     window.android_client.scanQRCode()
+                } else {
+                    this.$alert('网页版无法使用扫码', '提示', {type: 'error'})
                 }
             },
             //======================== test ========================
             test() {
-                this.saveAccounts('asdfasdf')
+                // alert(window.android_client.ffTest)
+                // if (window.android_client != undefined) {
+                //     alert('in')
+                //     window.android_client.ffTest('asdf')
+                // }
+                // this.$router.replace('/Web/0/4')
             }
         }
     }
@@ -534,5 +601,13 @@
 <style>
     .mu-dialog {
         position: relative !important;
+    }
+
+    .account-item-head {
+        width: 100%;
+        height: 5px;
+        position: absolute;
+        left: 0;
+        top: 0;
     }
 </style>

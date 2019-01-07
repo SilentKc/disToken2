@@ -1,26 +1,26 @@
 <template>
     <div style="width: 100%; padding: 10px; max-width: 600px; margin: 0 auto;">
-        <div v-if="accountList.length == 0" style="text-align: center;margin-top: 50px;">
-            <h3 style="font-size: 25px;margin: 0;">欢迎</h3>
-            <h3 style="margin: 0;" v-text="`使用${title}`"></h3>
-            <p style="margin: 50px 0 10px 0;">您可以：</p>
-        </div>
-        <mu-paper class="account-item" :z-depth="3" style="padding: 12px;" v-if="accountList.length == 0"
-                  @click="addClick">
-            <div class="account-item-center">
-                <div class="account-item-center-center" style="justify-content: center;">
-                    <span style="font-size: 18px;">导入账户</span>
-                </div>
+        <template v-if="accountList.length == 0">
+            <div style="text-align: center;margin-top: 30px;">
+                <div style="font-size: 25px; margin: 0;">欢迎</div>
+                <div style="font-size: 17px; margin: 0;" v-text="`使用${title}`"></div>
+                <p style="font-size: 15px; margin: 40px 0 20px 0;">您可以：</p>
             </div>
-        </mu-paper>
-        <mu-paper class="account-item" :z-depth="3" style="padding: 12px;" v-if="accountList.length == 0"
-                  @click="createClick">
-            <div class="account-item-center">
-                <div class="account-item-center-center" style="justify-content: center;">
-                    <span style="font-size: 18px;">创建账户</span>
+            <mu-paper class="account-item" :z-depth="3" style="padding: 12px;" @click="addClick">
+                <div class="account-item-center">
+                    <div class="account-item-center-center" style="justify-content: center;">
+                        <span style="font-size: 18px;">导入账户</span>
+                    </div>
                 </div>
-            </div>
-        </mu-paper>
+            </mu-paper>
+            <mu-paper class="account-item" :z-depth="3" style="padding: 12px;" @click="createClick">
+                <div class="account-item-center">
+                    <div class="account-item-center-center" style="justify-content: center;">
+                        <span style="font-size: 18px;">创建账户</span>
+                    </div>
+                </div>
+            </mu-paper>
+        </template>
         <mu-paper class="account-item" :z-depth="3" v-for="(account, index) in accountList"
                   :key="account.id + '_' + index"
                   v-if="configList[account.netId] != undefined"
@@ -86,7 +86,7 @@
         name: 'AccountList',
         data() {
             return {
-                title:title,
+                title: title,
                 configList: configList,
                 accountList: this.$parent.accountList,
                 openAlert: false,
@@ -127,9 +127,11 @@
                                 key: aesR
                             }
                             self.$parent.accountList.push(acc)
-                            self.$cookies.set('disToken2Accounts', JSON.stringify(self.$parent.accountList), '15d')
+                            // self.$cookies.set('disToken2Accounts', JSON.stringify(self.$parent.accountList), '15d')
                             let obj = JSON.stringify(self.$parent.accountList)
                             self.$parent.saveAccounts(obj)
+                            let storage = window.localStorage
+                            storage['disToken2Accounts'] = obj
                             self.closeAlertDialog()
                             self.$alert('导入成功', '提示', {type: 'success'})
                         } else {
@@ -156,9 +158,11 @@
                         self.$parent.accountList.splice(i, 1)
                     }
                 }
-                self.$cookies.set('disToken2Accounts', JSON.stringify(self.$parent.accountList))
+                // self.$cookies.set('disToken2Accounts', JSON.stringify(self.$parent.accountList))
                 let obj = JSON.stringify(self.$parent.accountList)
                 self.$parent.saveAccounts(obj)
+                let storage = window.localStorage
+                storage['disToken2Accounts'] = obj
             },
             // removeAccountAll() {
             //     let self = this
@@ -166,7 +170,7 @@
             // },
             accountClick(acc) {
                 let self = this
-                self.$router.push('/Account/' + acc.id)
+                self.$router.replace('/Account/' + acc.id)
             },
             createClick() {
                 let self = this
@@ -185,14 +189,6 @@
         justify-content: flex-start;
         align-items: flex-start;
         position: relative;
-    }
-
-    .account-item-head {
-        width: 100%;
-        height: 5px;
-        position: absolute;
-        left: 0;
-        top: 0;
     }
 
     .account-item-top {

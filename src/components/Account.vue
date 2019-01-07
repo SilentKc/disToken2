@@ -1,81 +1,31 @@
 <template>
     <div style="width: 100%; padding: 10px; max-width: 600px; margin: 0 auto;">
-        <mu-card v-if="configList[account.netId] != undefined" class="Card_header">
-            <div style="color: #fff;padding: 20px 30px;">
-                <div>
-                    <div class="v_key">
-                        <span>所在链</span>
-                        <span style="padding-left:10px;" v-text="configList[account.netId].netName"></span>
-                        <mu-button style="vertical-align: middle;" icon color="info" @click="doExport">
-                            <mu-icon value="vpn_key"></mu-icon>
-                        </mu-button>
-                    </div>
-                </div>
-                <div class="v_key" style="margin-top: 10px;">
-                    <div style="display: flex;justify-content: space-between;align-items: center;">
-                        <span style="font-size:22px;letter-spacing: 1px;" v-text="account.name"></span>
-                        <mu-button icon color="info" @click="doCopy">
-                            <mu-icon value="filter_none"></mu-icon>
-                        </mu-button>
-                    </div>
+        <mu-paper v-if="configObj != null" class="account-info" :z-depth="3"
+                  :style="{backgroundColor: configObj.netColor}">
+            <div class="account-info-row">
+                <div style="flex: 1; font-size: 32px; font-weight: 500; letter-spacing: 4px;">{{ account.name }}</div>
+                <div style="width: 48px; height: 48px; display: flex; justify-content: center; align-items: center;">
+                    <mu-button icon small @click="doCopy">
+                        <mu-icon value="filter_none"></mu-icon>
+                    </mu-button>
                 </div>
             </div>
-        </mu-card>
-        <mu-card style="width: 100%; margin-bottom: 10px; text-align: left; position: relative;">
-            <div class="meun">
-                <div>
-                    <mu-icon color="#7f7f7f" value="memory"></mu-icon>
-                    <span>资源</span>
+            <div class="account-info-row">
+                <div style="flex: 1; font-size: 16px; font-weight: 400; letter-spacing: 2px;">
+                    所在链 <span style="font-size: 20px;">{{configObj.netName}}</span>
                 </div>
-                <div>
-                    <mu-icon color="#7f7f7f" value="repeat"></mu-icon>
-                    <span>转账</span>
-                </div>
-                <div>
-                    <mu-icon color="#7f7f7f" value="repeat"></mu-icon>
-                    <span>转账记录</span>
+                <div style="width: 48px; height: 48px; display: flex; justify-content: center; align-items: center;">
+                    <mu-button icon small @click="doExport">
+                        <mu-icon value="vpn_key"></mu-icon>
+                    </mu-button>
                 </div>
             </div>
-        </mu-card>
-        <!-- <mu-card
-                v-if="configList[account.netId] != undefined"
-                style="width: 100%; margin-bottom: 10px; text-align: left; position: relative;">
-            <mu-card-title title="账户详情"></mu-card-title>
-            <mu-divider></mu-divider>
-            <mu-list>
-                <mu-list-item button :ripple="false">
-                    <mu-list-item-action>
-                        <mu-icon value="person"></mu-icon>
-                    </mu-list-item-action>
-                    <mu-list-item-title style="font-size: 22px; letter-spacing: 1px;">{{ account.name }}
-                    </mu-list-item-title>
-                    <mu-list-item-action style="flex-direction: row; align-items: center;">
-                        <mu-button icon color="info" @click="doCopy">
-                            <mu-icon value="filter_none"></mu-icon>
-                        </mu-button>
-                    </mu-list-item-action>
-                </mu-list-item>
-                <mu-list-item button :ripple="false">
-                    <mu-list-item-action>
-                        <div class="net-logo" :style="{backgroundColor: configList[account.netId].netColor}">{{
-                            configList[account.netId].netName[0] }}
-                        </div>
-                    </mu-list-item-action>
-                    <mu-list-item-title style="font-size: 20px; letter-spacing: 1px;">{{
-                        configList[account.netId].netName }}
-                    </mu-list-item-title>
-                    <mu-list-item-action style="flex-direction: row; align-items: center;">
-                        <mu-button icon color="info" @click="doExport">
-                            <mu-icon value="vpn_key"></mu-icon>
-                        </mu-button>
-                    </mu-list-item-action>
-                </mu-list-item>
-            </mu-list>
-        </mu-card> -->
+        </mu-paper>
         <mu-card
                 style="width: 100%; margin-bottom: 10px; text-align: left; position: relative;">
             <mu-card-title title="代币资产" sub-title=""></mu-card-title>
             <mu-divider></mu-divider>
+            <div class="account-item-head" :style="{backgroundColor: configObj.netColor}"></div>
             <template v-for="(token, index) in tokenList">
                 <div class="token-item" :key="token.symbol + index">
                     <!--<div class="left">-->
@@ -93,15 +43,16 @@
                         <!--<mu-button icon color="error" @click="goTransfer(token)">-->
                         <!--<mu-icon value="swap_horiz"></mu-icon>-->
                         <!--</mu-button>-->
-                        <div v-if="$parent.canOTC" class="otc-button" @click="goOTC">购买</div>
-                        <div v-else class="otc-button" @click="goTransfer(token)">转账</div>
+                        <!--<div v-if="$parent.canOTC" class="otc-button" @click="goOTC">购买</div>-->
+                        <!--<div v-else class="otc-button" @click="goTransfer(token)">转账</div>-->
+                        <div class="otc-button" @click="goTransfer(token)">转账</div>
                     </div>
                 </div>
                 <mu-divider inset :key="'d_' + index"></mu-divider>
             </template>
         </mu-card>
         <mu-card
-                style="width: 100%; margin-bottom: 10px; text-align: left; position: relative;">
+                style="width: 100%; margin-bottom: 10px; text-align: left; position: relative;" v-show="false">
             <mu-card-title title="账户资源" sub-title=""></mu-card-title>
             <mu-divider></mu-divider>
             <mu-list>
@@ -136,6 +87,16 @@
                 </mu-list-item>
             </mu-list>
         </mu-card>
+        <mu-bottom-sheet :open.sync="open" :overlay-close="false">
+            <div style="padding: 10px 18px 18px 18px;">
+                <mu-text-field v-model="pk" label="私钥请妥善保管" readonly multi-line :rows="8"
+                               full-width></mu-text-field>
+                <div style="display: flex; justify-content: space-between;">
+                    <mu-button color="blueGrey300" @click="doClose">关闭</mu-button>
+                    <mu-button color="success" @click="doCopyPK">复制</mu-button>
+                </div>
+            </div>
+        </mu-bottom-sheet>
     </div>
 </template>
 
@@ -147,6 +108,7 @@
         data() {
             return {
                 configList: configList,
+                configObj: null,
                 netId: '',
                 id: null,
                 account: {
@@ -154,7 +116,6 @@
                     name: '',
                     netId: '',
                     key: '',
-
                 },
                 info: {
                     ram: {
@@ -173,11 +134,9 @@
                     }
                 },
                 tokenList: [],
-                pluginTokenUrl: {
-                    url: '',
-                    isLoaded: false
-                },
-                canQRPay: false
+                canQRPay: false,
+                open: false,
+                pk: ''
             }
         },
         watch: {
@@ -190,6 +149,7 @@
             let self = this
             self.id = self.$route.params.id
             self.account = null
+            self.pk = ''
             let tmp = self.$parent.accountList
             for (let i in tmp) {
                 if (tmp[i].id == self.id) {
@@ -197,14 +157,24 @@
                 }
             }
             if (self.account != null && self.configList[self.account.netId] != undefined) {
+                self.configObj = self.configList[self.account.netId]
                 let configObj = self.configList[self.account.netId]
                 if (configObj == undefined) {
                     self.$router.replace('/AccountList')
                 } else {
+                    let storage = window.localStorage
+                    storage['disToken2Last'] = self.id
                     self.netId = configObj.netId
                     self.tokenList = configObj.tokenList
                     self.canQRPay = configObj.canQRPay
-                    self.$emit('setTop', {back: true, add: false, qr: self.canQRPay, scan: false, path: '1'})
+                    self.$emit('setTop', {
+                        back: false,
+                        list: true,
+                        add: false,
+                        qr: self.canQRPay,
+                        scan: false,
+                        path: '1'
+                    })
                     self.getAccount()
                     self.getBalancese()
                 }
@@ -306,9 +276,30 @@
                     self.$alert('复制失败', '提示', {type: 'error'})
                 })
             },
+            doCopyPK() {
+                let self = this
+                self.$copyText(self.pk).then(function () {
+                    self.$alert('复制成功', '提示', {type: 'success'})
+                }, function () {
+                    self.$alert('复制失败', '提示', {type: 'error'})
+                })
+            },
             doExport() {
                 let self = this
-                self.$parent.doExport(self.account)
+                // self.$parent.doExport(self.account)
+                self.$parent.doExportNew(self.account, function (r) {
+                    if (r.success) {
+                        self.pk = r.result
+                        self.open = true
+                    } else {
+                        self.$alert(r.msg, '提示', {type: 'error'})
+                    }
+                })
+            },
+            doClose() {
+                let self = this
+                self.pk = ''
+                self.open = false
             },
             goTransfer(token) {
                 this.$router.push('/Transfer/' + this.id + '/' + token.code + '/' + token.symbol)
@@ -327,36 +318,25 @@
 </script>
 
 <style scoped>
-.meun{
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-}
-.meun div{
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px 10px;
-}
-.meun div:first-child{
-    border-right:1px solid #ccc;
-}
-.meun div:last-child{
-    border-left:1px solid #ccc;
-    position: relative;
-}
-.Card_header{
-    width: 100%;
-    margin-bottom: 10px;
-    text-align: left;
-    position: relative;
-    background-color: #2b2b2b;
-    border-radius: 8px;
-}
-.v_key .material-icons{
-    font-size:20px;
-}
+    .account-info {
+        margin-top: 8px;
+        margin-bottom: 16px;
+        padding: 8px 8px 8px 24px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        position: relative;
+        color: white;
+    }
+
+    .account-info-row {
+        width: 100%;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
     .token-item {
         /*margin-bottom: 10px;*/
         padding: 3px 4px 3px 16px;
